@@ -4,6 +4,7 @@ import com.panamahitek.ArduinoException;
 import com.panamahitek.PanamaHitek_Arduino;
 import java.awt.BorderLayout;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,10 +28,13 @@ public class Interface extends JFrame {
     private JTextField mensaje;
     private JTable mensajes;
     private JPanel centro,gruBoTabla,gruBoEnviar;
-    private DefaultTableModel model;
+    private DefaultTableModel dtm;
     public final Cursor CURSOR = new Cursor(Cursor.HAND_CURSOR);
     private ManejadorAction manejadorBotones;
     private ManejadorArduino manejadorArduino;
+    public final String[] COLUMNAS = {"No. Mensaje", "Mensaje"};
+    public final String[][] datos = {};
+    
 
     public Interface() {
         manejadorBotones = new ManejadorAction();
@@ -40,6 +44,7 @@ public class Interface extends JFrame {
         campos();
         tablas();
         comArduino();
+        agregar();
     }
 
     private void comArduino() {
@@ -53,14 +58,17 @@ public class Interface extends JFrame {
     }
     
     private void paneles(){
-        
+        centro = new JPanel();
+        centro.setLayout(new BorderLayout());
+        gruBoTabla = new JPanel();
     }
     
     private void tablas() {
-        model = new DefaultTableModel();
-        model.addColumn("No. Mensaje");
-        model.addColumn("Mensaje");
-        mensajes = new JTable(model);
+        dtm = new DefaultTableModel(datos, COLUMNAS);
+        mensajes = new JTable(dtm);
+        mensajes.setFont(new Font("Verdana", Font.PLAIN, 15));
+        mensajes.setPreferredScrollableViewportSize(new Dimension(400, 25));
+        mensajes.setAutoCreateRowSorter(true);
     }
 
     private void buttons() {
@@ -75,6 +83,16 @@ public class Interface extends JFrame {
     private void campos() {
         mensaje = new JTextField();
         mensaje.setFont(new Font("Vernanda",Font.BOLD,20));
+    }
+    
+    private void agregar(){
+        gruBoTabla.add(anadir);
+        gruBoTabla.add(eliminar);
+        
+        centro.add(mensaje,BorderLayout.CENTER);
+        centro.add(gruBoTabla,BorderLayout.SOUTH);
+        add(centro,BorderLayout.CENTER);
+        
     }
 
     private JButton contruitBoton() {
@@ -92,7 +110,7 @@ public class Interface extends JFrame {
                 String[] datos = new String[2];
                 datos[0] = "1";
                 datos[1] = "Hola yo soy isaac";
-                model.addRow(datos);
+                dtm.addRow(datos);
             }
             if (e.getSource() == eliminar) {
 

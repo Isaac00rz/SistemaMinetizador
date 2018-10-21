@@ -3,6 +3,8 @@ package Interface;
 import com.panamahitek.ArduinoException;
 import com.panamahitek.PanamaHitek_Arduino;
 import java.awt.BorderLayout;
+import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
@@ -12,62 +14,109 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
+import jssc.SerialPortEvent;
+import jssc.SerialPortEventListener;
+import jssc.SerialPortException;
 
-public class Interface extends JFrame implements ActionListener{
-    
-    private static PanamaHitek_Arduino ino;
-    private JButton enviar,eliminar,anadir;
+public class Interface extends JFrame {
+
+    private PanamaHitek_Arduino ino;
+    private JButton enviar, eliminar, anadir;
+    private JTextField mensaje;
     private JTable mensajes;
+    private JPanel centro,gruBoTabla,gruBoEnviar;
     private DefaultTableModel model;
-    
-    public Interface (){
+    public final Cursor CURSOR = new Cursor(Cursor.HAND_CURSOR);
+    private ManejadorAction manejadorBotones;
+    private ManejadorArduino manejadorArduino;
+
+    public Interface() {
+        manejadorBotones = new ManejadorAction();
+        manejadorArduino = new ManejadorArduino();
+        paneles();
+        buttons();
+        campos();
+        tablas();
+        comArduino();
+    }
+
+    private void comArduino() {
         // Construyendo la comunicacion al puerto serial
         ino = new PanamaHitek_Arduino();
         try {
-            ino.arduinoTX("/dev/ttyUSB0", 9600); 
+            ino.arduinoRXTX("/dev/ttyUSB0", 9600, manejadorArduino);
         } catch (ArduinoException ex) {
             Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private void paneles(){
         
+    }
+    
+    private void tablas() {
         model = new DefaultTableModel();
         model.addColumn("No. Mensaje");
         model.addColumn("Mensaje");
         mensajes = new JTable(model);
-        JScrollPane scrollpane = new JScrollPane(mensajes);
-        this.add(scrollpane,BorderLayout.CENTER);
-        this.addButtons();
     }
-    
-    public void addButtons(){
-        
-        JPanel panelButtons = new JPanel();
-        
-        enviar = new JButton("Enviar");
-        enviar.addActionListener(this);
-        eliminar = new JButton("Eliminar");
-        eliminar.addActionListener(this);
-        anadir = new JButton("+");
-        anadir.addActionListener(this);
-        
-        panelButtons.add(enviar);
-        panelButtons.add(anadir);
-        panelButtons.add(eliminar);
-        this.add(panelButtons,BorderLayout.SOUTH);
+
+    private void buttons() {
+        enviar = contruitBoton();
+        enviar.setText("Enviar");
+        eliminar = contruitBoton();
+        eliminar.setText("Eliminar");
+        anadir = contruitBoton();
+        anadir.setText("Agregar");
     }
-    
-    @Override
-    public void actionPerformed(ActionEvent e) {
-       if(e.getSource()== anadir){
-           String [] datos = new String [2];
-           datos[0] = "1";
-           datos[1] = "Hola yo soy isaac";
-           model.addRow(datos);
-       }else if(e.getSource()== eliminar){
-           
-       }else if(e.getSource()== enviar){
-           
-       }
+
+    private void campos() {
+        mensaje = new JTextField();
+        mensaje.setFont(new Font("Vernanda",Font.BOLD,20));
     }
-    
+
+    private JButton contruitBoton() {
+        JButton boton = new JButton();
+        boton.addActionListener(manejadorBotones);
+        boton.setCursor(CURSOR);
+        return boton;
+    }
+
+    private class ManejadorAction implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == anadir) {
+                String[] datos = new String[2];
+                datos[0] = "1";
+                datos[1] = "Hola yo soy isaac";
+                model.addRow(datos);
+            }
+            if (e.getSource() == eliminar) {
+
+            }
+            if (e.getSource() == enviar) {
+
+            }
+        }
+
+    }
+
+    private class ManejadorArduino implements SerialPortEventListener {
+
+        @Override
+        public void serialEvent(SerialPortEvent spe) {
+            try {
+                if (ino.isMessageAvailable()) {
+                    //Se imprime el mensaje recibido en la consola
+                    System.out.println(ino.printMessage());
+                }
+            } catch (SerialPortException | ArduinoException ex) {
+                Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+    }
 }

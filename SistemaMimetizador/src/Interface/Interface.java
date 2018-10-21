@@ -23,7 +23,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.Timer;
 import javax.swing.table.DefaultTableModel;
 import jssc.SerialPortEvent;
 import jssc.SerialPortEventListener;
@@ -43,9 +42,8 @@ public class Interface extends JFrame {
     private AdaptadorMouse manejadorMouse;
     public final String[] COLUMNAS = {"No. Mensaje", "Mensaje"};//Utilizado para crear el DTM
     public final String[][] dat = {};//Utilizado para crear el DTM
-    private int contador = 0, contadorTimer = 0; //Contador es para la posicion de la tabla, y contador2 es para el timer
+    private int contador = 0, posicion = 0; //Contador es para la posicion de la tabla, y contador2 es para el timer
     private ArrayList<String> cadenas; //Contendra todos los menajes que esten en la tabla
-    private Timer timer; //Objeto usado para mandar mensajes cada cierto tiempo a arduino
 
     public Interface() {
         manejadorBotones = new ManejadorAction();
@@ -63,7 +61,10 @@ public class Interface extends JFrame {
         // Construyendo la comunicacion al puerto serial
         ino = new PanamaHitek_Arduino();
         try {
-            ino.arduinoRXTX("/dev/ttyUSB0", 9600, manejadorArduino);
+            // Conexion con puerto serial ubuntu
+            //ino.arduinoRXTX("/dev/ttyUSB0", 9600, manejadorArduino); 
+            // Conexion con puerto serial windows
+            ino.arduinoRXTX("COM4", 9600, manejadorArduino); 
         } catch (ArduinoException ex) {
             Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -129,7 +130,7 @@ public class Interface extends JFrame {
 
     private void enviarDatos() {
         cadenas = new ArrayList();
-        contadorTimer = 0;
+        posicion = 0;
         int filas = mensajes.getRowCount();
         for (int i = 0; i < filas; i++) {
             cadenas.add(dtm.getValueAt(i, 1).toString());
@@ -137,55 +138,47 @@ public class Interface extends JFrame {
 
         //Prepar timer
         iniciarTimer();
-        if (timer != null) {
-            timer.stop();
-        }
-
         JOptionPane.showMessageDialog(Interface.this, "Mensajes enviados");
-        timer.start();
     }
+public String getFechaHora(){
+    Date date;
+    DateFormat hora, fecha;
 
-    private void iniciarTimer() {
+    date = new Date();
+    hora = new SimpleDateFormat("HH:mm:ss");
+    fecha = new SimpleDateFormat("dd/MM/yyyy");
+    String fechaHora ="Fecha:"+String.valueOf(fecha.format(date))+" Hr:"+ String.valueOf(hora.format(date));
+    return fechaHora;
+}
+private void iniciarTimer() {
 
-        timer = new Timer(10000, new ActionListener() {// los mensajes se enviaran cada 10 segungos
-            public void actionPerformed(ActionEvent e) {
-                int datos = cadenas.size();
-                Date date;
-                DateFormat hora, fecha;
-                
-                date = new Date();
-                hora = new SimpleDateFormat("HH:mm:ss");
-                fecha = new SimpleDateFormat("dd/MM/yyyy");
+    int datos = cadenas.size();
+    Date date;
+    DateFormat hora, fecha;
 
-                if (contadorTimer >= datos) {
-                    contadorTimer = 0;
-                }    
-                    System.out.println(cadenas.get(contadorTimer));
-                    System.out.println(hora.format(date));
-                    System.out.println(fecha.format(date));
-                    try {
-                        ino.sendData(cadenas.get(contadorTimer++)+" % "+fecha+" % "+hora); //La cadena final tendra el mesnaje + % + fecha+ % hora
-
-                    } catch (ArduinoException | SerialPortException ex) {
-                        Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-            }
-        });
+    date = new Date();
+    hora = new SimpleDateFormat("HH:mm:ss");
+    fecha = new SimpleDateFormat("dd/MM/yyyy");  
+    System.out.println(cadenas.get(posicion));
+    System.out.println(hora.format(date));
+    System.out.println(fecha.format(date));
+    try {
+        //ino.sendData(cadenas.get(contadorTimer++)+" % "+fecha+" % "+hora); //La cadena final tendra el mesnaje + % + fecha+ % hora
+         ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
+    } catch (ArduinoException | SerialPortException ex) {
+        Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
     }
+}
 
     private void siguienteMensaje() {
-        int datos = cadenas.size();
         if (cadenas != null) {
-            timer.stop();
+            if((posicion+1)==cadenas.size()){
+                posicion=0;
+            }else{
+                posicion=posicion+1;
+            }
             try {
-                if (contadorTimer >= datos) {
-                    contadorTimer = 0;
-                }
-                ino.sendData(cadenas.get(contadorTimer));
-                contadorTimer++;
-                iniciarTimer();
-                timer.start();
-
+                ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
             } catch (ArduinoException | SerialPortException ex) {
                 Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -193,19 +186,16 @@ public class Interface extends JFrame {
     }
 
     private void anteriorMensaje() {
+        System.out.println("entra anterior");
         if (cadenas != null) {
-            timer.stop();
+            if(posicion==0){
+                posicion=cadenas.size()-1;
+                System.out.println("tamano de array: "+cadenas.size());
+            }else{
+                posicion=posicion-1;
+            }
             try {
-                if ((contadorTimer - 2) < 0) {
-                    contadorTimer = 0;
-                } else {
-                    contadorTimer = contadorTimer - 2;
-                }
-                ino.sendData(cadenas.get(contadorTimer));
-                contadorTimer++;
-                iniciarTimer();
-                timer.start();
-
+                ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
             } catch (ArduinoException | SerialPortException ex) {
                 Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -244,7 +234,7 @@ public class Interface extends JFrame {
     private class ManejadorArduino implements SerialPortEventListener {
 
         @Override
-        public void serialEvent(SerialPortEvent spe) {
+        public synchronized void serialEvent(SerialPortEvent spe) {
             try {
                 if (ino.isMessageAvailable()) {
                     String cadenaArdu = ino.printMessage();

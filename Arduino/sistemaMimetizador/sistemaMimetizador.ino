@@ -1,8 +1,8 @@
+// Libreria que permite realizar lectura mediante el sensor DHT11
 #include "DHT11.h"
-
 /*
  <------- Libreria LiquidCrystal ---------->
- Permite manipular la pantalla LCD
+Permite manipular la pantalla LCD
 Incluye algunas de las siguientes funciones:
 - "autoscroll()" mueve a la izquierda el texto cuando ya no cabe y "noAutoscroll" lo desactiva
 - Para simular o mostrar una especie de puntero de escritura que parpadea se utiliza "blink()"
@@ -13,7 +13,6 @@ Incluye algunas de las siguientes funciones:
 - Para elegir la direccion en la que quieres escribir "rightToLeft()" de derecha a izquierda y "leftToRight()" de izquierda a derecha
 - Para posicionar el cursos en (0,0) -> home()
 
-Notas: - Para pantalla 16x2 En una sola linea me deja utilizar 24 utilizando scroll caracteres antes de saltar a la siguiente.
 */
 #include <LiquidCrystal.h>
 
@@ -24,17 +23,26 @@ Notas: - Para pantalla 16x2 En una sola linea me deja utilizar 24 utilizando scr
 #define D5 9
 #define D6 10
 #define D7 11
+
 // Pin para el sensor de humedad
 #define pinTh 2
+
 // Pin para el sensor de temperatura
 #define pinTe A5
 
+// Pines para Joystick
+#define ejeX A4
+#define ejeY A3
+
+// Variables para imprimir mensajes
 String mensaje = "";
 int longitud = 0;
 int slide = 0;
+
 // Variables necesarias para calcular la humedad
 float te = 0;
 float humedad = 0;
+
 // Variables necesarias para calcular la luminosidad
 const long A = 1000;     //Resistencia en oscuridad en KΩ 
 const int B = 15;        //Resistencia a la luz (10 Lux) en KΩ 
@@ -42,7 +50,8 @@ const int Rc = 10;       //Resistencia calibracion en KΩ
 const int LDRPin = A0;   //Pin del LDR 
 int V; 
 int ilum;
-// Variables para calcular temperatura
+
+// Variables para calcular temperatura y caracter personalizado
 float voltaje=0;
 float  temperatura=0;
 byte celsius[8] = {
@@ -56,58 +65,77 @@ byte celsius[8] = {
   0b00000
 };
 
+// Variables Joystick
+int axisX = 0;
+int axisY = 0;
+boolean lcdEmpty = true;
+
 LiquidCrystal lcd(RS,E,D4,D5,D6,D7);
 DHT11 dht11(pinTh);
 
 void setup() {
   lcd.begin(16,2); // Se inicializa la pantalla con su medida respectiva
-  lcd.createChar(0, celsius);
+  lcd.createChar(0, celsius); // Se incluye el caracter personalizado
+  
   Serial.begin(9600);
 
 }
 
 void loop() {
+  // Lectura de Joystick
+  axisX = analogRead(ejeX);
+  axisY = analogRead(ejeY);
+  
+  //Realiza la lectura de humedad por medio de DHT11, es capaz de medir la temperatura pero es impreciso
   dht11.read(humedad, te);
 
+  //Se realiza el calculo de la temperatura por medio de LM35
   voltaje=(analogRead(pinTe)*3.3)/1023;
   temperatura=voltaje*100;
   
+  // Se realiza el calculo para la luminosidad con el foto resistor
   V = analogRead(LDRPin);
   ilum = ((long)V*A*10)/((long)B*Rc*(1024-V));
-  
+
+  // Se realiza la lectura de los mensajes e la impresion del mismo a la pantalla LCD
   if(Serial.available()){
     delay(100);
+    lcdEmpty=false;
     lcd.clear();
+    // Convirtiendo los decimales recibidos a alfabeto y concatenandolo en una variable String
     while(Serial.available()){
       mensaje = mensaje + decimalALetras(Serial.read());
     }
     
-    longitud = mensaje.length();
-      lcd.print(mensaje);
-      lcd.print("T:"+(String)temperatura);
-      lcd.write((byte)0);
-      lcd.print(" H:"+(String)humedad+"% L:"+(String)ilum+" Fecha:21/10/2018 Hora 3:00");
-      /*if(longitud<=16){
-        slide=10;
-      }else if(longitud<41){
-        slide = longitud-16;
-      }else if(longitud>40){
-        slide = 40-16;
-      }*/
-      slide = 40-16;
-      for(int i=0;i<slide;i++){
-        delay(500);
-        lcd.scrollDisplayLeft();
-      }
-      for(int i=slide;i>0;i--){
-        delay(500);
-        lcd.scrollDisplayRight();
-      }
+    //longitud = mensaje.length();
+    // Se imprime el mensaje con todos los datos requeridos
+    lcd.print(mensaje);
+    lcd.print(" T:"+(String)temperatura);
+    lcd.write((byte)0);
+    lcd.print(" H:"+(String)humedad+"% L:"+(String)ilum);
   }
+  // Lista de condicionales que permite cambiar de mensaje o desplazar el texto en pantalla
+  if(!lcdEmpty){
+    if(axisX == 0){
+      lcd.scrollDisplayLeft();
+      delay(500);
+    }else if(axisX > 1000 ){
+      lcd.scrollDisplayRight();
+      delay(500);
+    }else if(axisY == 0){
+      Serial.println("0");
+      delay(800);
+    }else if(axisY > 1000 ){
+      Serial.println("1");
+      delay(800);
+    }
+  }
+  // Se vacia variable para evitar imprimir el mismo mensaje y evitar concatenarlo con los demas mensajes
   mensaje = "";
+  longitud=0;
 }
 
-// Tranduccion de decimales a letras ya que al recibir cadenas desde Java obtenemos codigo ASCII
+// Tranduccion de decimales a letras ya que al recibir cadenas desde Java obtenemos demacilaes
 char decimalALetras (int entrada){
     char salida=' ';
     switch(entrada){

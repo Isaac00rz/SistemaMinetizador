@@ -127,7 +127,7 @@ public class Interface extends JFrame {
         boton.setCursor(CURSOR);
         return boton;
     }
-
+    // Envia el primer dato a Arduino indicando de esta manera que puede navegar entre mensajes
     private void enviarDatos() {
         cadenas = new ArrayList();
         posicion = 0;
@@ -135,41 +135,31 @@ public class Interface extends JFrame {
         for (int i = 0; i < filas; i++) {
             cadenas.add(dtm.getValueAt(i, 1).toString());
         }
-
-        //Prepar timer
         iniciarTimer();
         JOptionPane.showMessageDialog(Interface.this, "Mensajes enviados");
     }
-public String getFechaHora(){
-    Date date;
-    DateFormat hora, fecha;
+    //Metodo que genera Fecha y hora en cual el mensaje es emitido
+    public String getFechaHora(){
+        Date date;
+        DateFormat hora, fecha;
 
-    date = new Date();
-    hora = new SimpleDateFormat("HH:mm:ss");
-    fecha = new SimpleDateFormat("dd/MM/yyyy");
-    String fechaHora ="Fecha:"+String.valueOf(fecha.format(date))+" Hr:"+ String.valueOf(hora.format(date));
-    return fechaHora;
-}
-private void iniciarTimer() {
-
-    int datos = cadenas.size();
-    Date date;
-    DateFormat hora, fecha;
-
-    date = new Date();
-    hora = new SimpleDateFormat("HH:mm:ss");
-    fecha = new SimpleDateFormat("dd/MM/yyyy");  
-    System.out.println(cadenas.get(posicion));
-    System.out.println(hora.format(date));
-    System.out.println(fecha.format(date));
-    try {
-        //ino.sendData(cadenas.get(contadorTimer++)+" % "+fecha+" % "+hora); //La cadena final tendra el mesnaje + % + fecha+ % hora
-         ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
-    } catch (ArduinoException | SerialPortException ex) {
-        Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
+        date = new Date();
+        hora = new SimpleDateFormat("HH:mm:ss");
+        fecha = new SimpleDateFormat("dd/MM/yyyy");
+        String fechaHora ="Fecha:"+String.valueOf(fecha.format(date))+" Hr:"+ String.valueOf(hora.format(date));
+        return fechaHora;
     }
-}
-
+    
+    private void iniciarTimer() {
+        int datos = cadenas.size();
+        try {
+            //ino.sendData(cadenas.get(contadorTimer++)+" % "+fecha+" % "+hora); //La cadena final tendra el mesnaje + % + fecha+ % hora
+             ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
+        } catch (ArduinoException | SerialPortException ex) {
+            Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    // Metodo que muestra el siguiente mensaje
     private void siguienteMensaje() {
         if (cadenas != null) {
             if((posicion+1)==cadenas.size()){
@@ -184,7 +174,7 @@ private void iniciarTimer() {
             }
         }
     }
-
+    // Metodo que muestra el mensaje anterior
     private void anteriorMensaje() {
         System.out.println("entra anterior");
         if (cadenas != null) {
@@ -201,7 +191,7 @@ private void iniciarTimer() {
             }
         }
     }
-
+    // Eventos de la interfaz
     private class ManejadorAction implements ActionListener {
 
         @Override
@@ -230,7 +220,7 @@ private void iniciarTimer() {
         }
 
     }
-
+    // Eventos al escucha de Arduino
     private class ManejadorArduino implements SerialPortEventListener {
 
         @Override
@@ -254,7 +244,6 @@ private void iniciarTimer() {
     }
 
     private class AdaptadorMouse extends MouseAdapter {
-
         @Override
         public void mouseClicked(MouseEvent me) {
             int fila = 0;

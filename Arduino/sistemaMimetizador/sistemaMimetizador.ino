@@ -78,7 +78,6 @@ void setup() {
   lcd.createChar(0, celsius); // Se incluye el caracter personalizado
   
   Serial.begin(9600);
-
 }
 
 void loop() {

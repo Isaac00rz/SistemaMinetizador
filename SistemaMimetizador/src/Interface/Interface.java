@@ -43,9 +43,10 @@ public class Interface extends JFrame {
     public final String[] COLUMNAS = {"No. Mensaje", "Mensaje"};//Utilizado para crear el DTM
     public final String[][] dat = {};//Utilizado para crear el DTM
     private int contador = 0, posicion = 0; //Contador es para la posicion de la tabla, y contador2 es para el timer
-    private ArrayList<String> cadenas; //Contendra todos los menajes que esten en la tabla
+    private ArrayList<String> cadenas,fechaHora; //Contendra todos los menajes que esten en la tabla
 
     public Interface() {
+        fechaHora=new ArrayList();
         manejadorBotones = new ManejadorAction();
         manejadorArduino = new ManejadorArduino();
         manejadorMouse = new AdaptadorMouse();
@@ -133,7 +134,7 @@ public class Interface extends JFrame {
         posicion = 0;
         int filas = mensajes.getRowCount();
         for (int i = 0; i < filas; i++) {
-            cadenas.add(dtm.getValueAt(i, 1).toString());
+            cadenas.add(dtm.getValueAt(i, 1).toString()+" "+fechaHora.get(i));
         }
         iniciarTimer();
         JOptionPane.showMessageDialog(Interface.this, "Mensajes enviados");
@@ -154,7 +155,7 @@ public class Interface extends JFrame {
         int datos = cadenas.size();
         try {
             //ino.sendData(cadenas.get(contadorTimer++)+" % "+fecha+" % "+hora); //La cadena final tendra el mesnaje + % + fecha+ % hora
-             ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
+             ino.sendData(cadenas.get(posicion));
         } catch (ArduinoException | SerialPortException ex) {
             Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -168,7 +169,7 @@ public class Interface extends JFrame {
                 posicion=posicion+1;
             }
             try {
-                ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
+                ino.sendData(cadenas.get(posicion));
             } catch (ArduinoException | SerialPortException ex) {
                 Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -176,16 +177,14 @@ public class Interface extends JFrame {
     }
     // Metodo que muestra el mensaje anterior
     private void anteriorMensaje() {
-        System.out.println("entra anterior");
         if (cadenas != null) {
             if(posicion==0){
                 posicion=cadenas.size()-1;
-                System.out.println("tamano de array: "+cadenas.size());
             }else{
                 posicion=posicion-1;
             }
             try {
-                ino.sendData(cadenas.get(posicion)+" "+getFechaHora());
+                ino.sendData(cadenas.get(posicion));
             } catch (ArduinoException | SerialPortException ex) {
                 Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -202,10 +201,12 @@ public class Interface extends JFrame {
                 String[] datos = new String[2];
                 datos[0] = String.valueOf(contador++);
                 datos[1] = mensaje.getText();
+                fechaHora.add(getFechaHora());
                 dtm.addRow(datos);
             }
             if (e.getSource() == eliminar) {
                 fila = mensajes.getSelectedRow();
+                fechaHora.remove(fila);
                 dtm.removeRow(fila);
                 contador--;
                 noFilas = dtm.getRowCount();

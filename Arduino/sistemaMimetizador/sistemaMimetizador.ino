@@ -1,4 +1,6 @@
-/* 
+#include "DHT11.h"
+
+/*
  <------- Libreria LiquidCrystal ---------->
  Permite manipular la pantalla LCD
 Incluye algunas de las siguientes funciones:
@@ -22,50 +24,84 @@ Notas: - Para pantalla 16x2 En una sola linea me deja utilizar 24 utilizando scr
 #define D5 9
 #define D6 10
 #define D7 11
-
+// Pin para el sensor de humedad
+#define pinTh 2
 // Pin para el sensor de temperatura
-#define sensorT A5
-
-LiquidCrystal lcd(RS,E,D4,D5,D6,D7);
+#define pinTe A5
 
 String mensaje = "";
 int longitud = 0;
 int slide = 0;
+// Variables necesarias para calcular la humedad
+float te = 0;
+float humedad = 0;
+// Variables necesarias para calcular la luminosidad
+const long A = 1000;     //Resistencia en oscuridad en KΩ 
+const int B = 15;        //Resistencia a la luz (10 Lux) en KΩ 
+const int Rc = 10;       //Resistencia calibracion en KΩ 
+const int LDRPin = A0;   //Pin del LDR 
+int V; 
+int ilum;
+// Variables para calcular temperatura
 float voltaje=0;
 float  temperatura=0;
+byte celsius[8] = {
+  0b11000,
+  0b11011,
+  0b00100,
+  0b01000,
+  0b01000,
+  0b00100,
+  0b00011,
+  0b00000
+};
+
+LiquidCrystal lcd(RS,E,D4,D5,D6,D7);
+DHT11 dht11(pinTh);
 
 void setup() {
+  lcd.begin(16,2); // Se inicializa la pantalla con su medida respectiva
+  lcd.createChar(0, celsius);
+  Serial.begin(9600);
 
-lcd.begin(16,2); // Se inicializa la pantalla con su medida respectiva
-Serial.begin(9600);
 }
 
 void loop() {
-  voltaje=(analogRead(sensorT)*3.3)/1023;
+  dht11.read(humedad, te);
+
+  voltaje=(analogRead(pinTe)*3.3)/1023;
   temperatura=voltaje*100;
+  
+  V = analogRead(LDRPin);
+  ilum = ((long)V*A*10)/((long)B*Rc*(1024-V));
+  
   if(Serial.available()){
     delay(100);
-    //clearScreem();
     lcd.clear();
     while(Serial.available()){
       mensaje = mensaje + decimalALetras(Serial.read());
     }
+    
     longitud = mensaje.length();
       lcd.print(mensaje);
-      lcd.setCursor(0,1);
-      lcd.print("T:"+(String)temperatura+"C");
-      if(longitud<41){
+      lcd.print("T:"+(String)temperatura);
+      lcd.write((byte)0);
+      lcd.print(" H:"+(String)humedad+"% L:"+(String)ilum+" Fecha:21/10/2018 Hora 3:00");
+      /*if(longitud<=16){
+        slide=10;
+      }else if(longitud<41){
         slide = longitud-16;
       }else if(longitud>40){
         slide = 40-16;
-      }
+      }*/
+      slide = 40-16;
       for(int i=0;i<slide;i++){
-        lcd.scrollDisplayLeft();
         delay(500);
+        lcd.scrollDisplayLeft();
       }
       for(int i=slide;i>0;i--){
-        lcd.scrollDisplayRight();
         delay(500);
+        lcd.scrollDisplayRight();
       }
   }
   mensaje = "";

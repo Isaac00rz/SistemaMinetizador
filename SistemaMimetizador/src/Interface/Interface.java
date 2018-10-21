@@ -157,7 +157,9 @@ public class Interface extends JFrame {
                 hora = new SimpleDateFormat("HH:mm:ss");
                 fecha = new SimpleDateFormat("dd/MM/yyyy");
 
-                if (contadorTimer < datos) {
+                if (contadorTimer >= datos) {
+                    contadorTimer = 0;
+                }    
                     System.out.println(cadenas.get(contadorTimer));
                     System.out.println(hora.format(date));
                     System.out.println(fecha.format(date));
@@ -167,19 +169,6 @@ public class Interface extends JFrame {
                     } catch (ArduinoException | SerialPortException ex) {
                         Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
                     }
-
-                } else {
-                    contadorTimer = 0;
-                    System.out.println(cadenas.get(contadorTimer));
-                    System.out.println(hora.format(date));
-                    System.out.println(fecha.format(date));
-                    try {
-                        ino.sendData(cadenas.get(contadorTimer++)+" % "+fecha+" % "+hora);//La cadena final tendra el mesnaje + % + fecha+ % hora
-
-                    } catch (ArduinoException | SerialPortException ex) {
-                        Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
             }
         });
     }

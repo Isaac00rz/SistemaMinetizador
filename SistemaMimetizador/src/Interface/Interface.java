@@ -39,11 +39,11 @@ public class Interface extends JFrame {
     private ManejadorArduino manejadorArduino;
     private AdaptadorMouse manejadorMouse;
     public final String[] COLUMNAS = {"No. Mensaje", "Mensaje"};//Utilizado para crear el DTM
-    public final String[][] datos = {};//Utilizado para crear el DTM
+    public final String[][] dat = {};//Utilizado para crear el DTM
     private int contador = 0, contadorTimer = 0; //Contador es para la posicion de la tabla, y contador2 es para el timer
     private ArrayList<String> cadenas; //Contendra todos los menajes que esten en la tabla
     private Timer timer; //Objeto usado para mandar mensajes cada cierto tiempo a arduino
- 
+
     public Interface() {
         manejadorBotones = new ManejadorAction();
         manejadorArduino = new ManejadorArduino();
@@ -76,7 +76,7 @@ public class Interface extends JFrame {
     }
 
     private void tablas() {
-        dtm = new DefaultTableModel(datos, COLUMNAS);
+        dtm = new DefaultTableModel(dat, COLUMNAS);
         mensajes = new JTable(dtm);
         mensajes.setFont(new Font("Verdana", Font.PLAIN, 15));
         mensajes.setPreferredScrollableViewportSize(new Dimension(400, 300));
@@ -126,15 +126,23 @@ public class Interface extends JFrame {
 
     private void enviarDatos() {
         cadenas = new ArrayList();
+        contadorTimer = 0;
         int filas = mensajes.getRowCount();
         for (int i = 0; i < filas; i++) {
             cadenas.add(dtm.getValueAt(i, 1).toString());
         }
 
         //Prepar timer
+        iniciarTimer();
         if (timer != null) {
             timer.stop();
         }
+
+        JOptionPane.showMessageDialog(Interface.this, "Mensajes enviados");
+        timer.start();
+    }
+
+    private void iniciarTimer() {
         timer = new Timer(10000, new ActionListener() {// los mensajes se enviaran cada 10 segungos
             public void actionPerformed(ActionEvent e) {
                 int datos = cadenas.size();
@@ -142,7 +150,7 @@ public class Interface extends JFrame {
                     System.out.println(cadenas.get(contadorTimer));
                     try {
                         ino.sendData(cadenas.get(contadorTimer++));
-                        
+
                     } catch (ArduinoException | SerialPortException ex) {
                         Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -152,15 +160,52 @@ public class Interface extends JFrame {
                     System.out.println(cadenas.get(contadorTimer));
                     try {
                         ino.sendData(cadenas.get(contadorTimer++));
-                        
+
                     } catch (ArduinoException | SerialPortException ex) {
                         Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
         });
-        JOptionPane.showMessageDialog(Interface.this, "Mensajes enviados");
-        timer.start();
+    }
+
+    private void siguienteMensaje() {
+        int datos = cadenas.size();
+        if (cadenas != null) {
+            timer.stop();
+            try {
+                if (contadorTimer >= datos) {
+                    contadorTimer = 0;
+                }
+                ino.sendData(cadenas.get(contadorTimer));
+                contadorTimer++;
+                iniciarTimer();
+                timer.start();
+
+            } catch (ArduinoException | SerialPortException ex) {
+                Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    private void anteriorMensaje() {
+        if (cadenas != null) {
+            timer.stop();
+            try {
+                if((contadorTimer-2)<0){
+                    contadorTimer=0;
+                }else{
+                    contadorTimer = contadorTimer - 2;
+                }
+                ino.sendData(cadenas.get(contadorTimer));
+                contadorTimer++;
+                iniciarTimer();
+                timer.start();
+
+            } catch (ArduinoException | SerialPortException ex) {
+                Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     private class ManejadorAction implements ActionListener {
@@ -198,7 +243,13 @@ public class Interface extends JFrame {
         public void serialEvent(SerialPortEvent spe) {
             try {
                 if (ino.isMessageAvailable()) {
-                    //Se imprime el mensaje recibido en la consola
+                    String cadenaArdu = ino.printMessage();
+                    if (cadenaArdu.equals("1")) { // Si arduino manda uno, se enviara el siguiente mensaje
+                        siguienteMensaje();
+                    }
+                    if (cadenaArdu.equals("0")) {// si arduino manda cero, se enviara el mensaje anterior
+                        anteriorMensaje();
+                    }
                     System.out.println(ino.printMessage());
                 }
             } catch (SerialPortException | ArduinoException ex) {

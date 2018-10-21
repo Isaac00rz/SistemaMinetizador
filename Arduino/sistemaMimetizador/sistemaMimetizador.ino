@@ -23,19 +23,26 @@ Notas: - Para pantalla 16x2 En una sola linea me deja utilizar 24 utilizando scr
 #define D6 10
 #define D7 11
 
+// Pin para el sensor de temperatura
+#define sensorT A5
+
 LiquidCrystal lcd(RS,E,D4,D5,D6,D7);
 
 String mensaje = "";
 int longitud = 0;
 int slide = 0;
+float voltaje=0;
+float  temperatura=0;
+
 void setup() {
 
 lcd.begin(16,2); // Se inicializa la pantalla con su medida respectiva
 Serial.begin(9600);
-
 }
 
 void loop() {
+  voltaje=(analogRead(sensorT)*3.3)/1023;
+  temperatura=voltaje*100;
   if(Serial.available()){
     delay(100);
     //clearScreem();
@@ -44,10 +51,9 @@ void loop() {
       mensaje = mensaje + decimalALetras(Serial.read());
     }
     longitud = mensaje.length();
-    if(longitud<=16){
-     lcd.print(mensaje);
-    }else if(longitud>16){
       lcd.print(mensaje);
+      lcd.setCursor(0,1);
+      lcd.print("T:"+(String)temperatura+"C");
       if(longitud<41){
         slide = longitud-16;
       }else if(longitud>40){
@@ -61,7 +67,6 @@ void loop() {
         lcd.scrollDisplayRight();
         delay(500);
       }
-    }
   }
   mensaje = "";
 }

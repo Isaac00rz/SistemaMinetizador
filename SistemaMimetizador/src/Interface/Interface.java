@@ -42,9 +42,10 @@ public class Interface extends JFrame {
     private AdaptadorMouse manejadorMouse;
     public final String[] COLUMNAS = {"No. Mensaje", "Mensaje"};//Utilizado para crear el DTM
     public final String[][] dat = {};//Utilizado para crear el DTM
-    private int contador = 0, posicion = 0; //Contador es para la posicion de la tabla, y contador2 es para el timer
-    private ArrayList<String> cadenas,fechaHora; //Contendra todos los menajes que esten en la tabla
-
+    private int contador = 0, posicion = 0,posicionFragmento = 0; //Contador es para la posicion de la tabla, y contador2 es para el timer
+    private ArrayList<String> cadenas,fechaHora,fragmentos; //Contendra todos los menajes que esten en la tabla
+    private ArrayList<ArrayList<String>> partesMensajes;
+    
     public Interface() {
         fechaHora=new ArrayList();
         manejadorBotones = new ManejadorAction();
@@ -131,13 +132,96 @@ public class Interface extends JFrame {
     // Envia el primer dato a Arduino indicando de esta manera que puede navegar entre mensajes
     private void enviarDatos() {
         cadenas = new ArrayList();
+        partesMensajes = new ArrayList<>();
         posicion = 0;
+        posicionFragmento = 0;
         int filas = mensajes.getRowCount();
         for (int i = 0; i < filas; i++) {
             cadenas.add(dtm.getValueAt(i, 1).toString()+" "+fechaHora.get(i));
         }
+        shortMessages();
         iniciarTimer();
         JOptionPane.showMessageDialog(Interface.this, "Mensajes enviados");
+    }
+    
+    public void shortMessages(){
+        int parte = 0;
+        int longitud = 0;
+        String contenido = "";
+        for (int y = 0; y < cadenas.size(); y++) {
+            fragmentos = new ArrayList();
+            String [] palabras = cadenas.get(y).split(" ");
+            parte = 0;
+            longitud = 0;
+            contenido = "";
+            
+            for(int i=0;i<palabras.length;i++){
+                if(longitud+palabras[i].length()+1<16){
+                    if(longitud == 0){
+                        contenido = contenido + palabras[i];
+                        longitud = longitud + palabras[i].length();
+
+                    }else{
+                        contenido = contenido + " " + palabras[i];
+                        longitud = longitud + palabras[i].length()+1;
+                    }
+                    if((i+1) == palabras.length){
+                            for(int u=longitud;longitud<32;longitud++){
+                                contenido = contenido + " ";
+                            }
+                            fragmentos.add(contenido);
+                        }
+                }else{
+                    i = i - 1;
+                    for(int u=longitud;longitud<16;longitud++){
+                        contenido = contenido + " ";
+                    }
+                    longitud = 0;
+                    parte = parte + 1;
+                    if(parte == 2){
+                        fragmentos.add(contenido);
+                        parte = 0;
+                        contenido = "";
+                    }
+                }
+            }
+            partesMensajes.add(fragmentos);
+        }
+    }
+    
+    public void nextPartOfMessage(){
+        try {
+            if (cadenas != null) {
+                posicionFragmento = posicionFragmento+1;
+                if( posicionFragmento < partesMensajes.get(posicion).size()){
+                    ino.sendData(partesMensajes.get(posicion).get(posicionFragmento));
+                }else if(posicionFragmento==partesMensajes.get(posicion).size()){
+                    posicionFragmento=-1;
+                    ino.sendData("1");
+                }
+            }
+        } catch (ArduinoException | SerialPortException ex) {
+            Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    public void backPartOfMessage(){
+        //ino.sendData("1");
+        try {
+            if (cadenas != null) {
+                if(posicionFragmento == -1){
+                    posicionFragmento = partesMensajes.get(posicion).size()-1;
+                    ino.sendData(partesMensajes.get(posicion).get(posicionFragmento));
+                }else if(posicionFragmento == 0){
+                    posicionFragmento = -1;
+                    ino.sendData("1");
+                }else{
+                    posicionFragmento = posicionFragmento - 1;
+                    ino.sendData(partesMensajes.get(posicion).get(posicionFragmento));
+                }
+            }
+        } catch (ArduinoException | SerialPortException ex) {
+            Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     //Metodo que genera Fecha y hora en cual el mensaje es emitido
     public String getFechaHora(){
@@ -150,12 +234,11 @@ public class Interface extends JFrame {
         String fechaHora ="Fecha:"+String.valueOf(fecha.format(date))+" Hr:"+ String.valueOf(hora.format(date));
         return fechaHora;
     }
-    
+
     private void iniciarTimer() {
-        int datos = cadenas.size();
         try {
             //ino.sendData(cadenas.get(contadorTimer++)+" % "+fecha+" % "+hora); //La cadena final tendra el mesnaje + % + fecha+ % hora
-             ino.sendData(cadenas.get(posicion));
+            ino.sendData(partesMensajes.get(posicion).get(posicionFragmento));
         } catch (ArduinoException | SerialPortException ex) {
             Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -234,6 +317,12 @@ public class Interface extends JFrame {
                     }
                     if (cadenaArdu.equals("0")) {// si arduino manda cero, se enviara el mensaje anterior
                         anteriorMensaje();
+                    }
+                    if (cadenaArdu.equals("2")) {// si arduino manda cero, se enviara el mensaje anterior
+                        backPartOfMessage();
+                    }
+                    if (cadenaArdu.equals("3")) {// si arduino manda cero, se enviara el mensaje anterior
+                        nextPartOfMessage();
                     }
                     System.out.println(ino.printMessage());
                 }

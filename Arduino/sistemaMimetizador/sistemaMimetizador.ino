@@ -102,21 +102,26 @@ void loop() {
     while(Serial.available()){
       mensaje = mensaje + decimalALetras(Serial.read());
     }
-    
-    //longitud = mensaje.length();
     // Se imprime el mensaje con todos los datos requeridos
-    lcd.print(mensaje);
-    lcd.print(" T:"+(String)temperatura);
-    lcd.write((byte)0);
-    lcd.print(" H:"+(String)humedad+"% L:"+(String)ilum);
+    if(mensaje.equals("1")){
+      lcd.clear();
+      lcd.print(" T:"+(String)temperatura);
+      lcd.write((byte)0);
+      lcd.print(" H:"+(String)humedad+"% L:"+(String)ilum);
+    }else{
+      lcd.setCursor(0,0);
+      lcd.println(mensaje.substring(0,16));
+      lcd.setCursor(0,1);
+      lcd.println(mensaje.substring(16,mensaje.length()));
+    }
   }
   // Lista de condicionales que permite cambiar de mensaje o desplazar el texto en pantalla
   if(!lcdEmpty){
     if(axisX == 0){
-      lcd.scrollDisplayLeft();
+      Serial.println("2");
       delay(500);
     }else if(axisX > 1000 ){
-      lcd.scrollDisplayRight();
+      Serial.println("3");
       delay(500);
     }else if(axisY == 0){
       Serial.println("0");

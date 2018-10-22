@@ -36,8 +36,6 @@ Incluye algunas de las siguientes funciones:
 
 // Variables para imprimir mensajes
 String mensaje = "";
-int longitud = 0;
-int slide = 0;
 
 // Variables necesarias para calcular la humedad
 float te = 0;
@@ -131,7 +129,6 @@ void loop() {
   }
   // Se vacia variable para evitar imprimir el mismo mensaje y evitar concatenarlo con los demas mensajes
   mensaje = "";
-  longitud=0;
 }
 
 // Tranduccion de decimales a letras ya que al recibir cadenas desde Java obtenemos demacilaes

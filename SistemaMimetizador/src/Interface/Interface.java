@@ -145,44 +145,48 @@ public class Interface extends JFrame {
     }
     
     public void shortMessages(){
-        int parte = 0;
         int longitud = 0;
+        int valida = 0;
+        int contador = 0;
         String contenido = "";
         for (int y = 0; y < cadenas.size(); y++) {
             fragmentos = new ArrayList();
             String [] palabras = cadenas.get(y).split(" ");
-            parte = 0;
             longitud = 0;
+            valida = 0;
+            contador = 0;
             contenido = "";
             
-            for(int i=0;i<palabras.length;i++){
-                if(longitud+palabras[i].length()+1<16){
+            for (int i = 0; i < palabras.length; i++) {
+                if(longitud == 0){
+                    valida = palabras[i].length();
+                }else{ 
+                    valida = valida + palabras[i].length()+1; 
+                }
+                if(valida <= 16){
                     if(longitud == 0){
-                        contenido = contenido + palabras[i];
-                        longitud = longitud + palabras[i].length();
-
+                        contenido = contenido+palabras[i];
+                        longitud = longitud + palabras[i].length(); 
                     }else{
-                        contenido = contenido + " " + palabras[i];
-                        longitud = longitud + palabras[i].length()+1;
+                        contenido = contenido+" "+palabras[i];
+                        longitud = longitud + palabras[i].length()+1; 
                     }
                     if((i+1) == palabras.length){
-                            for(int u=longitud;longitud<32;longitud++){
-                                contenido = contenido + " ";
-                            }
-                            fragmentos.add(contenido);
-                        }
+                        fragmentos.add(contenido);
+                    }
                 }else{
-                    i = i - 1;
-                    for(int u=longitud;longitud<16;longitud++){
+                    for (int j = longitud; j < 16; j++) {
                         contenido = contenido + " ";
                     }
-                    longitud = 0;
-                    parte = parte + 1;
-                    if(parte == 2){
-                        fragmentos.add(contenido);
-                        parte = 0;
-                        contenido = "";
-                    }
+                   contador = contador + 1;
+                   if(contador == 2){
+                       fragmentos.add(contenido);
+                       contenido = "";
+                       contador = 0;
+                   }
+                   i = i - 1;
+                   longitud = 0;
+                   valida = 0;
                 }
             }
             partesMensajes.add(fragmentos);

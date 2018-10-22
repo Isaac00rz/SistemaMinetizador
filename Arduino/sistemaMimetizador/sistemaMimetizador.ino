@@ -73,8 +73,7 @@ DHT11 dht11(pinTh);
 
 void setup() {
   lcd.begin(16,2); // Se inicializa la pantalla con su medida respectiva
-  lcd.createChar(0, celsius); // Se incluye el caracter personalizado
-  
+  lcd.createChar(0, celsius); // Se incluye el caracter personalizado  
   Serial.begin(9600);
 }
 

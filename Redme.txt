@@ -1,0 +1,19 @@
+Sistema de despliegue de mensajes en Arduino el cual imprime por medio de una pantalla LCD.
+
+Los mensajes serán transferidos por medio de JAVA por conexión serial, con una interfaz gráfica.
+La interfaz gráfica permite agregar, borrar y modificar los mensajes.
+Arduino mostrara los mensajes que se le envíen agregándole además:
+    Fecha
+    Hora
+    Temperatura
+    Luminosidad
+    Humedad.
+
+Para que los mensajes sean mostrados, Arduino debe estar conectado con el programa de JAVA.
+
+Para el cambio de mensajes se utiliza un joystick, el cual:
+    Con la derecha: Se recorrerá el mensaje a la derecha en caso de que sea largo
+    Con la izquierda: Se recorrerá el mensaje a la izquierda.
+    Arriba: Se cambia al siguiente mensaje.
+    Abajo: Se cambia al mensaje anterior.
+

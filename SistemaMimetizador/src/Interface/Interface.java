@@ -39,7 +39,6 @@ public class Interface extends JFrame {
     public final Cursor CURSOR = new Cursor(Cursor.HAND_CURSOR);
     private ManejadorAction manejadorBotones;
     private ManejadorArduino manejadorArduino;
-    private AdaptadorMouse manejadorMouse;
     public final String[] COLUMNAS = {"No. Mensaje", "Mensaje"};//Utilizado para crear el DTM
     public final String[][] dat = {};//Utilizado para crear el DTM
     private int contador = 0, posicion = 0,posicionFragmento = 0; //Contador es para la posicion de la tabla, y contador2 es para el timer
@@ -50,7 +49,6 @@ public class Interface extends JFrame {
         fechaHora=new ArrayList();
         manejadorBotones = new ManejadorAction();
         manejadorArduino = new ManejadorArduino();
-        manejadorMouse = new AdaptadorMouse();
         paneles();
         buttons();
         campos();
@@ -87,7 +85,19 @@ public class Interface extends JFrame {
         mensajes.setFont(new Font("Verdana", Font.PLAIN, 15));
         mensajes.setPreferredScrollableViewportSize(new Dimension(400, 300));
         mensajes.setAutoCreateRowSorter(true);
-        mensajes.addMouseListener(manejadorMouse);
+        mensajes.addMouseListener(new MouseAdapter(){
+        @Override
+        public void mouseClicked(MouseEvent me) {
+            int fila = 0;
+            String cadena = "";
+            if (me.getSource() == mensajes) {
+                fila = mensajes.getSelectedRow();
+                cadena = mensajes.getValueAt(fila, 1).toString();
+                mensaje.setText(cadena);
+            }
+        }
+        
+        });
     }
 
     private void buttons() {
@@ -335,18 +345,5 @@ public class Interface extends JFrame {
             }
         }
 
-    }
-
-    private class AdaptadorMouse extends MouseAdapter {
-        @Override
-        public void mouseClicked(MouseEvent me) {
-            int fila = 0;
-            String cadena = "";
-            if (me.getSource() == mensajes) {
-                fila = mensajes.getSelectedRow();
-                cadena = mensajes.getValueAt(fila, 1).toString();
-                mensaje.setText(cadena);
-            }
-        }
     }
 }

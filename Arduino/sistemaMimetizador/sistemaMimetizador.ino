@@ -104,7 +104,6 @@ void loop() {
     }
     // Se imprime el mensaje con todos los datos requeridos
     if(mensaje.equals("1")){
-      lcd.clear();
       lcd.setCursor(0,0);
       lcd.print(" T:"+(String)temperatura);
       lcd.write((byte)0);

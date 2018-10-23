@@ -12,8 +12,8 @@ Incluye algunas de las siguientes funciones:
 -  "scrollDisplayRight()" mueve el texto una vez a la derecha y "scrollDisplayLeft()" una vez a la izquierda
 - Para elegir la direccion en la que quieres escribir "rightToLeft()" de derecha a izquierda y "leftToRight()" de izquierda a derecha
 - Para posicionar el cursos en (0,0) -> home()
-
 */
+
 #include <LiquidCrystal.h>
 
 // Pines para pantalla LCD
@@ -23,6 +23,9 @@ Incluye algunas de las siguientes funciones:
 #define D5 9
 #define D6 10
 #define D7 11
+
+//Pin para el buzzer.
+#define buzzer 8
 
 // Pin para el sensor de humedad
 #define pinTh 2
@@ -73,11 +76,14 @@ DHT11 dht11(pinTh);
 
 void setup() {
   lcd.begin(16,2); // Se inicializa la pantalla con su medida respectiva
-  lcd.createChar(0, celsius); // Se incluye el caracter personalizado  
+  lcd.createChar(0, celsius); // Se incluye el caracter personalizado 
   Serial.begin(9600);
+  pinMode(buzzer,OUTPUT);
+  digitalWrite(buzzer,LOW);
 }
 
 void loop() {
+  lcd.home();
   // Lectura de Joystick
   axisX = analogRead(ejeX);
   axisY = analogRead(ejeY);
@@ -95,41 +101,54 @@ void loop() {
 
   // Se realiza la lectura de los mensajes e la impresion del mismo a la pantalla LCD
   if(Serial.available()){
-    delay(100);
-    lcdEmpty=false;
     lcd.clear();
+    delay(800);
+    lcdEmpty=false;
     // Convirtiendo los decimales recibidos a alfabeto y concatenandolo en una variable String
     while(Serial.available()){
       mensaje = mensaje + decimalALetras(Serial.read());
     }
     // Se imprime el mensaje con todos los datos requeridos
     if(mensaje.equals("1")){
-      lcd.setCursor(0,0);
-      lcd.print(" T:"+(String)temperatura);
+      lcd.home();
+      lcd.print(" T:"+(String)te);
       lcd.write((byte)0);
       lcd.setCursor(0,1);
       lcd.print(" H:"+(String)humedad+"% L:"+(String)ilum);
     }else{
-      lcd.setCursor(0,0);
+      lcd.home();
       lcd.println(mensaje.substring(0,16));
       lcd.setCursor(0,1);
-      lcd.println(mensaje.substring(16,mensaje.length()));
+      lcd.println(mensaje.substring(16,32));
     }
   }
   // Lista de condicionales que permite cambiar de mensaje o desplazar el texto en pantalla
   if(!lcdEmpty){
-    if(axisX == 0){
-      Serial.println("2");
-      delay(500);
-    }else if(axisX > 1000 ){
+    if(axisX <= 300){
       Serial.println("3");
-      delay(500);
-    }else if(axisY == 0){
-      Serial.println("0");
-      delay(800);
-    }else if(axisY > 1000 ){
+      digitalWrite(buzzer,HIGH);
+      delay(300);
+      digitalWrite(buzzer,LOW);
+      delay(2000);
+      
+    }else if(axisX > 800 ){
+      Serial.println("2");
+      digitalWrite(buzzer,HIGH);
+      delay(300);
+      digitalWrite(buzzer,LOW);
+      delay(2000);
+    }else if(axisY <= 300){
       Serial.println("1");
-      delay(800);
+      digitalWrite(buzzer,HIGH);
+      delay(300);
+      digitalWrite(buzzer,LOW);
+      delay(2000);
+    }else if(axisY > 800 ){
+      Serial.println("0");
+     digitalWrite(buzzer,HIGH);
+      delay(300);
+      digitalWrite(buzzer,LOW);
+      delay(2000);
     }
   }
   // Se vacia variable para evitar imprimir el mismo mensaje y evitar concatenarlo con los demas mensajes
